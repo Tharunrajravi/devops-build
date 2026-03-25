@@ -2,42 +2,50 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_DEV = "tharunrajravi/dev:latest"
+        IMAGE_NAME = "tharunrajravi/dev:latest"
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build Image') {
+        stage('Build & Push Image') {
             steps {
-                sh 'docker build -t $DOCKER_DEV .'
-            }
-        }
-
-        stage('Push Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
-                    echo $PASS | docker login -u $USER --password-stdin
-                    docker push $DOCKER_DEV
+                    echo "Running build script..."
+                    chmod +x build.sh
+                    ./build.sh
                     '''
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Application') {
             steps {
                 sh '''
-                docker stop app || true
-                docker rm app || true
-                docker run -d -p 80:80 --name app $DOCKER_DEV
+                echo "Running deploy script..."
+                chmod +x deploy.sh
+                ./deploy.sh
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline executed successfully!"
+        }
+        failure {
+            echo "Pipeline failed. Check logs!"
         }
     }
 }
