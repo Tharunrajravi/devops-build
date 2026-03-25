@@ -21,7 +21,22 @@ pipeline {
 
         stage('Push Image') {
             steps {
-                sh 'docker push $DOCKER_DEV'
+                withCredentials([usernamePassword(credentialsId: 'docker-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh '''
+                    echo $PASS | docker login -u $USER --password-stdin
+                    docker push $DOCKER_DEV
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                docker stop app || true
+                docker rm app || true
+                docker run -d -p 80:80 --name app $DOCKER_DEV
+                '''
             }
         }
     }
