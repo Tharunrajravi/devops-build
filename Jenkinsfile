@@ -3,14 +3,13 @@ pipeline {
 
     environment {
         DOCKER_DEV = "tharunrajravi/dev:latest"
-        DOCKER_PROD = "tharunrajravi/prod:latest"
     }
 
     stages {
 
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                git branch: 'dev', url: 'https://github.com/Tharunrajravi/devops-build.git'
+                checkout scm
             }
         }
 
@@ -20,7 +19,7 @@ pipeline {
             }
         }
 
-        stage('Push DEV') {
+        stage('Push Image') {
             steps {
                 sh 'docker push $DOCKER_DEV'
             }
